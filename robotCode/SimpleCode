@@ -1,0 +1,141 @@
+//Define UltraSonic Sensor pins
+const int vccPin = 8;
+const int trigPin = 9;
+const int echoPin = 10;
+const int gndPin = 11;
+
+//Define motor module pins
+const int channel_a_enable  = 6;
+const int channel_a_input_1 = 4;
+const int channel_a_input_2 = 7;
+const int channel_b_enable  = 5;
+const int channel_b_input_3 = 3;
+const int channel_b_input_4 = 2;
+
+//Define motor variables
+int a=0;    //motor a speed and direction
+int b=0;    //motor b speed and direction
+
+// Define fine-tuning variables for car
+#define PROX 20
+#define FORWARDSPEED 100
+#define REVERSESPEED 100
+#define TURNSPEED 70
+
+float duration;
+float distance;
+
+void setup() {
+  // Ultra Sonic config
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(vccPin, OUTPUT);
+  pinMode(gndPin, INPUT);  
+  digitalWrite(vccPin, HIGH);
+  digitalWrite(gndPin, LOW);
+  
+  // Motor Controller config
+  pinMode( channel_a_enable, OUTPUT );  // Channel A enable
+  pinMode( channel_a_input_1, OUTPUT ); // Channel A input 1
+  pinMode( channel_a_input_2, OUTPUT ); // Channel A input 2  
+  pinMode( channel_b_enable, OUTPUT );  // Channel B enable
+  pinMode( channel_b_input_3, OUTPUT ); // Channel B input 3
+  pinMode( channel_b_input_4, OUTPUT ); // Channel B input 4
+
+  //Initialise motor off
+  digitalWrite( channel_a_input_1, LOW);
+  digitalWrite( channel_a_input_2, LOW);
+  digitalWrite( channel_a_enable, LOW);
+  digitalWrite( channel_b_input_3, LOW);
+  digitalWrite( channel_b_input_4, LOW);
+  digitalWrite( channel_b_enable, LOW);
+  
+  delay(1000);  //wait a bit    
+}
+
+void loop() {
+  //Send UltraSonic wave  
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);  
+
+  //Calculate distance and take action
+  duration = pulseIn(echoPin, HIGH);
+  distance = (duration * 0.0343)/2;
+  delay(10);
+  if (distance > PROX)
+    {
+     movefwd();
+     }
+  if (distance < PROX)
+  {
+    movestp();
+    delay(500);
+    movebkw();
+    delay(500);
+    movestp();  
+    delay(100);  
+    movelft();
+    delay(500);
+  }
+}
+
+//Functions to move car
+void movefwd(){
+  a=FORWARDSPEED;
+  b=FORWARDSPEED;
+  setmotor();    
+  delay(200);    //wait a bit
+}
+
+void movestp(){
+  a=0;
+  b=0;
+  setmotor();    
+  delay(200);    //wait a bit
+}
+
+void movebkw(){
+  a=-(REVERSESPEED);
+  b=-(REVERSESPEED);
+  setmotor();    
+  delay(200);    //wait a bit
+}
+
+void movelft(){
+  a=TURNSPEED;
+  b=-(TURNSPEED);
+  setmotor();    
+  delay(200);    //wait a bit
+}
+
+void setmotor(){
+  int s;  
+  if(a>0){
+      digitalWrite( channel_a_input_1, HIGH);
+      digitalWrite( channel_a_input_2, LOW);
+  }
+  if(a<0){
+      digitalWrite( channel_a_input_1, LOW);
+      digitalWrite( channel_a_input_2, HIGH);
+  }
+  if(b>0){
+      digitalWrite( channel_b_input_3, HIGH);
+      digitalWrite( channel_b_input_4, LOW);
+  }
+  if(b<0){
+      digitalWrite( channel_b_input_3, LOW);
+      digitalWrite( channel_b_input_4, HIGH);
+  }
+  s=abs(a);
+  if(s>255){s=255;}
+  if(s<0){s=0;}
+  analogWrite( channel_a_enable, s);
+  
+  s=abs(b);
+  if(s>255){s=255;}
+  if(s<0){s=0;}
+  analogWrite( channel_b_enable, s); 
+}
